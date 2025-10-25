@@ -1,60 +1,8 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761420304886,
+  "lastUpdate": 1761429521567,
   "repoUrl": "https://github.com/czlonkowski/n8n-mcp",
   "entries": {
     "n8n-mcp Benchmarks": [
-      {
-        "commit": {
-          "author": {
-            "email": "56956555+czlonkowski@users.noreply.github.com",
-            "name": "Romuald Członkowski",
-            "username": "czlonkowski"
-          },
-          "committer": {
-            "email": "noreply@github.com",
-            "name": "GitHub",
-            "username": "web-flow"
-          },
-          "distinct": true,
-          "id": "cc9fe6944929a45e5837645b5ec5b1f126530547",
-          "message": "Merge pull request #280 from czlonkowski/security/issue-265-pr2-rate-limiting-and-ssrf\n\nSecurity Audit PR #2: Rate Limiting & SSRF Protection (HIGH-02, HIGH-03)",
-          "timestamp": "2025-10-06T18:28:09+02:00",
-          "tree_id": "1c0c1424908e3ccc41f42dd153e9fe28d00762b7",
-          "url": "https://github.com/czlonkowski/n8n-mcp/commit/cc9fe6944929a45e5837645b5ec5b1f126530547"
-        },
-        "date": 1759768197303,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "sample - array sorting - small",
-            "value": 0.019,
-            "range": "0.3319",
-            "unit": "ms",
-            "extra": "52507 ops/sec"
-          },
-          {
-            "name": "sample - array sorting - large",
-            "value": 3.1887,
-            "range": "0.5932999999999997",
-            "unit": "ms",
-            "extra": "314 ops/sec"
-          },
-          {
-            "name": "sample - string concatenation",
-            "value": 0.0048,
-            "range": "0.247",
-            "unit": "ms",
-            "extra": "206538 ops/sec"
-          },
-          {
-            "name": "sample - object creation",
-            "value": 0.0659,
-            "range": "0.3086",
-            "unit": "ms",
-            "extra": "15176 ops/sec"
-          }
-        ]
-      },
       {
         "commit": {
           "author": {
@@ -1689,6 +1637,37 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/czlonkowski/n8n-mcp/commit/ee7229b4dbef765f5dce6516787eb137fec4c8a2"
         },
         "date": 1761420304574,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "sample - array sorting - small",
+            "value": 0.0136,
+            "range": "0.3096",
+            "unit": "ms",
+            "extra": "73341 ops/sec"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "56956555+czlonkowski@users.noreply.github.com",
+            "name": "Romuald Członkowski",
+            "username": "czlonkowski"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "590dc087ac83acf7a1a2711abc086e9aeedb6fdd",
+          "message": "fix: resolve Docker port configuration mismatch (Issue #228) (#373)",
+          "timestamp": "2025-10-25T23:56:54+02:00",
+          "tree_id": "b750516e0ed62dce7dedc9e28c75a7c14adfdee8",
+          "url": "https://github.com/czlonkowski/n8n-mcp/commit/590dc087ac83acf7a1a2711abc086e9aeedb6fdd"
+        },
+        "date": 1761429520889,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
