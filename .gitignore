@@ -135,8 +135,8 @@ n8n-mcp-wrapper.sh
 # Package tarballs
 *.tgz
 
-# MCP configuration files
-.mcp.json
+# MCP configuration files (local settings only, .mcp.json should be committed)
+.claude/settings.local.json
 
 # Telemetry configuration (user-specific)
 ~/.n8n-mcp/
