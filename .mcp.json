@@ -2,9 +2,13 @@
   "mcpServers": {
     "n8n-mcp": {
       "type": "http",
-      "url": "https://czlonkowskin8n-mcp-railwaylatest-production-dbe9.up.railway.app/mcp",
+      "url": "${N8N_MCP_URL}",
       "headers": {
-        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
+        "Authorization": "Bearer ${N8N_MCP_AUTH}"
+      },
+      "env": {
+        "N8N_API_URL": "${N8N_API_URL}",
+        "N8N_API_KEY": "${N8N_API_KEY}"
       }
     }
   }
