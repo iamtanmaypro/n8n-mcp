@@ -323,6 +323,13 @@ export class SingleSessionHTTPServer {
    * Load auth token from environment variable or file
    */
   private loadAuthToken(): string | null {
+    // Check if no-auth mode is enabled
+    if (process.env.ALLOW_NO_AUTH === 'true') {
+      logger.info('ALLOW_NO_AUTH is enabled - authentication bypassed');
+      console.log('⚠️ NOTICE: ALLOW_NO_AUTH is enabled - server is running without authentication');
+      return null;
+    }
+    
     // First, try AUTH_TOKEN environment variable
     if (process.env.AUTH_TOKEN) {
       logger.info('Using AUTH_TOKEN from environment variable');
@@ -352,6 +359,15 @@ export class SingleSessionHTTPServer {
   private validateEnvironment(): void {
     // Load auth token from env var or file
     this.authToken = this.loadAuthToken();
+    
+    // Check if no-auth mode is enabled
+    if (process.env.ALLOW_NO_AUTH === 'true') {
+      logger.info('ALLOW_NO_AUTH enabled - skipping auth token validation');
+      console.log('\n⚠️  SECURITY WARNING ⚠️');
+      console.log('ALLOW_NO_AUTH is enabled - server is running WITHOUT authentication!');
+      console.log('This should only be used for testing or behind a trusted reverse proxy.\n');
+      return;
+    }
     
     if (!this.authToken || this.authToken.trim() === '') {
       const message = 'No authentication token found or token is empty. Set AUTH_TOKEN environment variable or AUTH_TOKEN_FILE pointing to a file containing the token.';
@@ -1084,76 +1100,86 @@ export class SingleSessionHTTPServer {
         });
       }
       
-      // Enhanced authentication check with specific logging
-      const authHeader = req.headers.authorization;
+      // Check if authentication is required
+      const skipAuth = process.env.ALLOW_NO_AUTH === 'true';
       
-      // Check if Authorization header is missing
-      if (!authHeader) {
-        logger.warn('Authentication failed: Missing Authorization header', { 
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-          reason: 'no_auth_header'
-        });
-        res.status(401).json({ 
-          jsonrpc: '2.0',
-          error: {
-            code: -32001,
-            message: 'Unauthorized'
-          },
-          id: null
-        });
-        return;
-      }
-      
-      // Check if Authorization header has Bearer prefix
-      if (!authHeader.startsWith('Bearer ')) {
-        logger.warn('Authentication failed: Invalid Authorization header format (expected Bearer token)', { 
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-          reason: 'invalid_auth_format',
-          headerPrefix: authHeader.substring(0, Math.min(authHeader.length, 10)) + '...'  // Log first 10 chars for debugging
-        });
-        res.status(401).json({ 
-          jsonrpc: '2.0',
-          error: {
-            code: -32001,
-            message: 'Unauthorized'
-          },
-          id: null
-        });
-        return;
-      }
-      
-      // Extract token and trim whitespace
-      const token = authHeader.slice(7).trim();
+      if (!skipAuth) {
+        // Enhanced authentication check with specific logging
+        const authHeader = req.headers.authorization;
+        
+        // Check if Authorization header is missing
+        if (!authHeader) {
+          logger.warn('Authentication failed: Missing Authorization header', { 
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            reason: 'no_auth_header'
+          });
+          res.status(401).json({ 
+            jsonrpc: '2.0',
+            error: {
+              code: -32001,
+              message: 'Unauthorized'
+            },
+            id: null
+          });
+          return;
+        }
+        
+        // Check if Authorization header has Bearer prefix
+        if (!authHeader.startsWith('Bearer ')) {
+          logger.warn('Authentication failed: Invalid Authorization header format (expected Bearer token)', { 
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            reason: 'invalid_auth_format',
+            headerPrefix: authHeader.substring(0, Math.min(authHeader.length, 10)) + '...'  // Log first 10 chars for debugging
+          });
+          res.status(401).json({ 
+            jsonrpc: '2.0',
+            error: {
+              code: -32001,
+              message: 'Unauthorized'
+            },
+            id: null
+          });
+          return;
+        }
+        
+        // Extract token and trim whitespace
+        const token = authHeader.slice(7).trim();
 
-      // SECURITY: Use timing-safe comparison to prevent timing attacks
-      // See: https://github.com/czlonkowski/n8n-mcp/issues/265 (CRITICAL-02)
-      const isValidToken = this.authToken &&
-        AuthManager.timingSafeCompare(token, this.authToken);
+        // SECURITY: Use timing-safe comparison to prevent timing attacks
+        // See: https://github.com/czlonkowski/n8n-mcp/issues/265 (CRITICAL-02)
+        const isValidToken = this.authToken &&
+          AuthManager.timingSafeCompare(token, this.authToken);
 
-      if (!isValidToken) {
-        logger.warn('Authentication failed: Invalid token', {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-          reason: 'invalid_token'
-        });
-        res.status(401).json({
-          jsonrpc: '2.0',
-          error: {
-            code: -32001,
-            message: 'Unauthorized'
-          },
-          id: null
-        });
-        return;
+        if (!isValidToken) {
+          logger.warn('Authentication failed: Invalid token', {
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            reason: 'invalid_token'
+          });
+          res.status(401).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32001,
+              message: 'Unauthorized'
+            },
+            id: null
+          });
+          return;
+        }
+        
+        logger.info('Authentication successful');
+      } else {
+        logger.info('ALLOW_NO_AUTH is enabled - skipping authentication');
       }
       
       // Handle request with single session
-      logger.info('Authentication successful - proceeding to handleRequest', {
+      logger.info('Proceeding to handleRequest', {
         hasSession: !!this.session,
         sessionType: this.session?.isSSE ? 'SSE' : 'StreamableHTTP',
-        sessionInitialized: this.session?.initialized
+        sessionInitialized: this.session?.initialized,
+        authSkipped: skipAuth
       });
 
       // Extract instance context from headers if present (for multi-tenant support)

@@ -41,6 +41,13 @@ let authToken: string | null = null;
  * Load auth token from environment variable or file
  */
 export function loadAuthToken(): string | null {
+  // Check if no-auth mode is enabled
+  if (process.env.ALLOW_NO_AUTH === 'true') {
+    logger.info('ALLOW_NO_AUTH is enabled - authentication bypassed');
+    console.log('⚠️ NOTICE: ALLOW_NO_AUTH is enabled - server is running without authentication');
+    return null;
+  }
+  
   // First, try AUTH_TOKEN environment variable
   if (process.env.AUTH_TOKEN) {
     logger.info('Using AUTH_TOKEN from environment variable');
@@ -71,11 +78,21 @@ function validateEnvironment() {
   // Load auth token from env var or file
   authToken = loadAuthToken();
   
+  // Check if no-auth mode is enabled
+  if (process.env.ALLOW_NO_AUTH === 'true') {
+    logger.info('ALLOW_NO_AUTH enabled - skipping auth token validation');
+    console.log('\n⚠️  SECURITY WARNING ⚠️');
+    console.log('ALLOW_NO_AUTH is enabled - server is running WITHOUT authentication!');
+    console.log('This should only be used for testing or behind a trusted reverse proxy.\n');
+    return;
+  }
+  
   if (!authToken || authToken.trim() === '') {
     logger.error('No authentication token found or token is empty');
     console.error('ERROR: AUTH_TOKEN is required for HTTP mode and cannot be empty');
     console.error('Set AUTH_TOKEN environment variable or AUTH_TOKEN_FILE pointing to a file containing the token');
     console.error('Generate AUTH_TOKEN with: openssl rand -base64 32');
+    console.error('\nTo run without authentication (NOT recommended), set ALLOW_NO_AUTH=true\n');
     process.exit(1);
   }
   
@@ -278,69 +295,78 @@ export async function startFixedHTTPServer() {
   app.post('/mcp', async (req: express.Request, res: express.Response): Promise<void> => {
     const startTime = Date.now();
     
-    // Enhanced authentication check with specific logging
-    const authHeader = req.headers.authorization;
+    // Check if authentication is required
+    const skipAuth = process.env.ALLOW_NO_AUTH === 'true';
     
-    // Check if Authorization header is missing
-    if (!authHeader) {
-      logger.warn('Authentication failed: Missing Authorization header', { 
-        ip: req.ip,
-        userAgent: req.get('user-agent'),
-        reason: 'no_auth_header'
-      });
-      res.status(401).json({ 
-        jsonrpc: '2.0',
-        error: {
-          code: -32001,
-          message: 'Unauthorized'
-        },
-        id: null
-      });
-      return;
-    }
-    
-    // Check if Authorization header has Bearer prefix
-    if (!authHeader.startsWith('Bearer ')) {
-      logger.warn('Authentication failed: Invalid Authorization header format (expected Bearer token)', { 
-        ip: req.ip,
-        userAgent: req.get('user-agent'),
-        reason: 'invalid_auth_format',
-        headerPrefix: authHeader.substring(0, Math.min(authHeader.length, 10)) + '...'  // Log first 10 chars for debugging
-      });
-      res.status(401).json({ 
-        jsonrpc: '2.0',
-        error: {
-          code: -32001,
-          message: 'Unauthorized'
-        },
-        id: null
-      });
-      return;
-    }
-    
-    // Extract token and trim whitespace
-    const token = authHeader.slice(7).trim();
+    if (!skipAuth) {
+      // Enhanced authentication check with specific logging
+      const authHeader = req.headers.authorization;
+      
+      // Check if Authorization header is missing
+      if (!authHeader) {
+        logger.warn('Authentication failed: Missing Authorization header', { 
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          reason: 'no_auth_header'
+        });
+        res.status(401).json({ 
+          jsonrpc: '2.0',
+          error: {
+            code: -32001,
+            message: 'Unauthorized'
+          },
+          id: null
+        });
+        return;
+      }
+      
+      // Check if Authorization header has Bearer prefix
+      if (!authHeader.startsWith('Bearer ')) {
+        logger.warn('Authentication failed: Invalid Authorization header format (expected Bearer token)', { 
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          reason: 'invalid_auth_format',
+          headerPrefix: authHeader.substring(0, Math.min(authHeader.length, 10)) + '...'  // Log first 10 chars for debugging
+        });
+        res.status(401).json({ 
+          jsonrpc: '2.0',
+          error: {
+            code: -32001,
+            message: 'Unauthorized'
+          },
+          id: null
+        });
+        return;
+      }
+      
+      // Extract token and trim whitespace
+      const token = authHeader.slice(7).trim();
 
-    // SECURITY: Use timing-safe comparison to prevent timing attacks
-    // See: https://github.com/czlonkowski/n8n-mcp/issues/265 (CRITICAL-02)
-    const isValidToken = authToken &&
-      AuthManager.timingSafeCompare(token, authToken);
+      // SECURITY: Use timing-safe comparison to prevent timing attacks
+      // See: https://github.com/czlonkowski/n8n-mcp/issues/265 (CRITICAL-02)
+      const isValidToken = authToken &&
+        AuthManager.timingSafeCompare(token, authToken);
 
-    if (!isValidToken) {
-      logger.warn('Authentication failed: Invalid token', {
-        ip: req.ip,
-        userAgent: req.get('user-agent'),
-        reason: 'invalid_token'
-      });
-      res.status(401).json({
-        jsonrpc: '2.0',
-        error: {
-          code: -32001,
-          message: 'Unauthorized'
-        },
-        id: null
-      });
-      return;
+      if (!isValidToken) {
+        logger.warn('Authentication failed: Invalid token', {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          reason: 'invalid_token'
+        });
+        res.status(401).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32001,
+            message: 'Unauthorized'
+          },
+          id: null
+        });
+        return;
+      }
+      
+      logger.info('Authentication successful');
+    } else {
+      logger.info('ALLOW_NO_AUTH is enabled - skipping authentication');
     }
     
     try {
