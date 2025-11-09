@@ -323,8 +323,8 @@ export class SingleSessionHTTPServer {
    * Load auth token from environment variable or file
    */
   private loadAuthToken(): string | null {
-    // Check if no-auth mode is enabled
-    if (process.env.ALLOW_NO_AUTH === 'true') {
+    // Check if no-auth mode is enabled (case-insensitive)
+    if (process.env.ALLOW_NO_AUTH?.toLowerCase() === 'true' || process.env.ALLOW_NO_AUTH === '1') {
       logger.info('ALLOW_NO_AUTH is enabled - authentication bypassed');
       console.log('⚠️ NOTICE: ALLOW_NO_AUTH is enabled - server is running without authentication');
       return null;
@@ -360,8 +360,8 @@ export class SingleSessionHTTPServer {
     // Load auth token from env var or file
     this.authToken = this.loadAuthToken();
     
-    // Check if no-auth mode is enabled
-    if (process.env.ALLOW_NO_AUTH === 'true') {
+    // Check if no-auth mode is enabled (case-insensitive)
+    if (process.env.ALLOW_NO_AUTH?.toLowerCase() === 'true' || process.env.ALLOW_NO_AUTH === '1') {
       logger.info('ALLOW_NO_AUTH enabled - skipping auth token validation');
       console.log('\n⚠️  SECURITY WARNING ⚠️');
       console.log('ALLOW_NO_AUTH is enabled - server is running WITHOUT authentication!');
@@ -1100,8 +1100,8 @@ export class SingleSessionHTTPServer {
         });
       }
       
-      // Check if authentication is required
-      const skipAuth = process.env.ALLOW_NO_AUTH === 'true';
+      // Check if authentication is required (case-insensitive)
+      const skipAuth = process.env.ALLOW_NO_AUTH?.toLowerCase() === 'true' || process.env.ALLOW_NO_AUTH === '1';
       
       if (!skipAuth) {
         // Enhanced authentication check with specific logging

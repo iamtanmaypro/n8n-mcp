@@ -41,8 +41,8 @@ let authToken: string | null = null;
  * Load auth token from environment variable or file
  */
 export function loadAuthToken(): string | null {
-  // Check if no-auth mode is enabled
-  if (process.env.ALLOW_NO_AUTH === 'true') {
+  // Check if no-auth mode is enabled (case-insensitive)
+  if (process.env.ALLOW_NO_AUTH?.toLowerCase() === 'true' || process.env.ALLOW_NO_AUTH === '1') {
     logger.info('ALLOW_NO_AUTH is enabled - authentication bypassed');
     console.log('⚠️ NOTICE: ALLOW_NO_AUTH is enabled - server is running without authentication');
     return null;
@@ -78,8 +78,8 @@ function validateEnvironment() {
   // Load auth token from env var or file
   authToken = loadAuthToken();
   
-  // Check if no-auth mode is enabled
-  if (process.env.ALLOW_NO_AUTH === 'true') {
+  // Check if no-auth mode is enabled (case-insensitive)
+  if (process.env.ALLOW_NO_AUTH?.toLowerCase() === 'true' || process.env.ALLOW_NO_AUTH === '1') {
     logger.info('ALLOW_NO_AUTH enabled - skipping auth token validation');
     console.log('\n⚠️  SECURITY WARNING ⚠️');
     console.log('ALLOW_NO_AUTH is enabled - server is running WITHOUT authentication!');
@@ -295,8 +295,8 @@ export async function startFixedHTTPServer() {
   app.post('/mcp', async (req: express.Request, res: express.Response): Promise<void> => {
     const startTime = Date.now();
     
-    // Check if authentication is required
-    const skipAuth = process.env.ALLOW_NO_AUTH === 'true';
+    // Check if authentication is required (case-insensitive)
+    const skipAuth = process.env.ALLOW_NO_AUTH?.toLowerCase() === 'true' || process.env.ALLOW_NO_AUTH === '1';
     
     if (!skipAuth) {
       // Enhanced authentication check with specific logging

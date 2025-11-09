@@ -126,6 +126,7 @@ if [ "$(id -u)" = "0" ]; then
     export NODE_DB_PATH="$NODE_DB_PATH"
     export AUTH_TOKEN="$AUTH_TOKEN"
     export AUTH_TOKEN_FILE="$AUTH_TOKEN_FILE"
+    export ALLOW_NO_AUTH="$ALLOW_NO_AUTH"
     
     # Ensure AUTH_TOKEN_FILE has restricted permissions for security
     if [ -n "$AUTH_TOKEN_FILE" ] && [ -f "$AUTH_TOKEN_FILE" ]; then
